@@ -1,5 +1,14 @@
-TiLDA v2 Firmware
-=================
+TiLDA v2 Firmware: Cillian Fork
+===============================
+
+#### Cillian's Fork
+This fork of the firmware will involve me (Cillian) attempting to remove all
+the site-specific parts of the default firmware.  This includes the schedule,
+weather, badge-ID, and the radio infrastructure and mesh code.  I'll also add
+an easy way to hard-code your name onto the hang-screen.
+
+I make no promises that any of this will work and/or won't brick your badge,
+but I'd be surprised if it does.
 
 #### Firmware on the TiLDA v2 Badge
 * To use this code you need Arduino IDE version 1.5.7 or later which can be downloaded [here](http://arduino.cc/en/Main/Software#toc3).
