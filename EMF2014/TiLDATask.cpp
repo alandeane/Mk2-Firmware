@@ -43,7 +43,6 @@
 #include "AppManager.h"
 #include "HomeScreenApp.h"
 #include "SponsorsApp.h"
-#include "BadgeIdApp.h"
 #include "NotificationApp.h"
 #include "SnakeApp.h"
 #include "Tilda.h"
