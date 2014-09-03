@@ -37,29 +37,22 @@
 #include <Arduino.h>
 #include <FreeRTOS_ARM.h>
 #include "EMF2014Config.h"
-#include "RadioMessageHandler.h"
-#include "MessageCheckTask.h"
-
-class IncomingRadioMessage;
 
 class SettingsStoreObserver {
 public:
-    virtual void badgeIdChanged(uint16_t badgeId) = 0;
 };
 
-class SettingsStore: public RadioMessageHandler {
+class SettingsStore {
 public:
-    SettingsStore(MessageCheckTask& aMessageCheckTask);
+    SettingsStore();
     ~SettingsStore();
 
     bool getUniqueId(uint32_t* unique_id) const;
 
-    uint16_t getBadgeId() const;
-    void setBadgeId(uint16_t aBadgeId);
-    bool hasBadgeId() const;
-
     char* getUserNameLine1();
     char* getUserNameLine2();
+    void setUserNameLine1(char *newname1);
+    void setUserNameLine2(char *newname2);
 
     void addObserver(SettingsStoreObserver* aObserver);
     void removeObserver(SettingsStoreObserver* aObserver);
@@ -67,19 +60,14 @@ public:
 private:
     SettingsStore(const SettingsStore&);
 
-    void handleMessage(const IncomingRadioMessage&);
     void notifyObservers(uint16_t aBadgeId);
 
 private:
-    uint16_t mBadgeId;
-
     char name1[11];
     char name2[11];
 
     SettingsStoreObserver** mObservers;
     SemaphoreHandle_t mObserversMutex;
-
-    MessageCheckTask& mMessageCheckTask;
 };
 
 #endif // _SETTINGS_STORE_H_

@@ -43,7 +43,6 @@
 #include "GUITask.h"
 #include "SettingsStore.h"
 #include "BatterySaverTask.h"
-#include "RadioReceiveTask.h"
 
 class BadgeNotifications;
 class DataStore;
@@ -56,7 +55,6 @@ public:
     // access to things
     static RTC_clock& getClock();
     static BadgeNotifications& getBadgeNotifications();
-    static DataStore& getDataStore();
     static LCDTask& getLCDTask();
     static GUITask& getGUITask();
     static SettingsStore& getSettingsStore();
@@ -78,8 +76,6 @@ public:
     static Orientation_t getOrientation();
     static uint32_t millisecondsSinceBoot();
     static void markActivity();
-    static char* radioChannelIdentifier();
-    static uint8_t radioRssi();
 private:
     Tilda();
 
@@ -87,10 +83,8 @@ private:
     static AppManager* _appManager;
     static RTC_clock* _realTimeClock;
     static BadgeNotifications* _badgeNotifications;
-    static DataStore* _dataStore;
     static LCDTask* _lcdTask;
     static GUITask* _guiTask;
     static SettingsStore* _settingsStore;
     static BatterySaverTask* _batterySaverTask;
-    static RadioReceiveTask* _radioReceiveTask;
 };

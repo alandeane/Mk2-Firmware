@@ -30,17 +30,11 @@
 #include <DueFlashStorage.h>
 #include <debug.h>
 #include "Utils.h"
-#include "IncomingRadioMessage.h"
 
-#define BADGE_ID_UNKOWN 0
 #define MAX_OBSERVERS 10
 
-#define CONTENT_RID_RETURN_BADGE_ID 45058
-
-SettingsStore::SettingsStore(MessageCheckTask& aMessageCheckTask)
-    :mMessageCheckTask(aMessageCheckTask)
+SettingsStore::SettingsStore()
 {
-    mBadgeId = BADGE_ID_UNKOWN;
     mObservers = new SettingsStoreObserver*[MAX_OBSERVERS];
     for (int i = 0 ; i < MAX_OBSERVERS ; ++i) {
         mObservers[i] = NULL;
@@ -51,14 +45,10 @@ SettingsStore::SettingsStore(MessageCheckTask& aMessageCheckTask)
         name2[i] = 0;
     }
 
-    mMessageCheckTask.subscribe(this, CONTENT_RID_RETURN_BADGE_ID, CONTENT_RID_RETURN_BADGE_ID);
-
     mObserversMutex = xSemaphoreCreateMutex();
 }
 
 SettingsStore::~SettingsStore() {
-    mMessageCheckTask.unsubscribe(this);
-
     delete[] mObservers;
 }
 
@@ -87,8 +77,10 @@ void SettingsStore::removeObserver(SettingsStoreObserver* aObserver) {
     }
 }
 
+// What does this function do? And what needs doing for non-badgeid
+// notifications?
 void SettingsStore::notifyObservers(uint16_t aBadgeId) {
-    if (xSemaphoreTake(mObserversMutex, portMAX_DELAY) == pdTRUE) {
+/*    if (xSemaphoreTake(mObserversMutex, portMAX_DELAY) == pdTRUE) {
         for (int i = 0 ; i < MAX_OBSERVERS ; ++i) {
             if (mObservers[i] != NULL) {
                 mObservers[i]->badgeIdChanged(aBadgeId);
@@ -96,41 +88,7 @@ void SettingsStore::notifyObservers(uint16_t aBadgeId) {
         }
 
         xSemaphoreGive(mObserversMutex);
-    }
-}
-
-void SettingsStore::handleMessage(const IncomingRadioMessage& radioMessage) {
-    uint32_t uniqueId[4];
-    if (getUniqueId(uniqueId)) {
-        bool ourUniqueId = true;
-
-        for (int i = 0 ; i < 4 ; ++i) {
-            uint32_t receivedUniqueId = Utils::bytesToInt(radioMessage.content()[(i * 4) + 3],
-                                                            radioMessage.content()[(i * 4) + 2],
-                                                            radioMessage.content()[(i * 4) + 1],
-                                                            radioMessage.content()[(i * 4) + 0]);
-
-            ourUniqueId = ourUniqueId && receivedUniqueId == uniqueId[i];
-
-            if (!ourUniqueId)
-                debug::log("**** " + String(uniqueId[i]) + ":" + String(receivedUniqueId));
-        }
-
-        if (ourUniqueId) {
-            mBadgeId = Utils::bytesToInt(radioMessage.content()[16], radioMessage.content()[17]);
-
-            for (int i = 0; i < 10; ++i) {
-                name1[i] = radioMessage.content()[18 + i];
-                name2[i] = radioMessage.content()[28 + i];
-            }
-
-            debug::log("SettingsStore: Received Badge ID " + String(mBadgeId) + " with name1 " + String(name1) + " and name2 " + String(name2));
-
-            notifyObservers(mBadgeId);
-        } else {
-            debug::log("not our unique id");
-        }
-    }
+    }*/
 }
 
 char* SettingsStore::getUserNameLine1() {
@@ -141,20 +99,17 @@ char* SettingsStore::getUserNameLine2() {
     return name2;
 }
 
+void SettingsStore::setUserNameLine1(char *newname1) {
+    for(int i=0; i<10; i++)
+        name1[i] = newname1[i];
+}
+
+void SettingsStore::setUserNameLine2(char *newname2) {
+    for(int i=0; i<10; i++)
+        name2[i] = newname2[i];
+}
+
 bool SettingsStore::getUniqueId(uint32_t* unique_id) const {
     return flash_init(FLASH_ACCESS_MODE_128, 4) == FLASH_RC_OK &&
            flash_read_unique_id(unique_id, 4) == FLASH_RC_OK;
-}
-
-uint16_t SettingsStore::getBadgeId() const {
-    return mBadgeId;
-}
-
-void SettingsStore::setBadgeId(uint16_t aBadgeId) {
-    mBadgeId = aBadgeId;
-    notifyObservers(mBadgeId);
-}
-
-bool SettingsStore::hasBadgeId() const {
-    return mBadgeId != BADGE_ID_UNKOWN;
 }

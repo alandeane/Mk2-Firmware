@@ -26,9 +26,7 @@
  SOFTWARE.
  */
 
-#include "MessageCheckTask.h"
 #include "BadgeNotifications.h"
-#include "IncomingRadioMessage.h"
 #include "NotificationApp.h"
 #include "AppManager.h"
 #include "Utils.h"
@@ -41,29 +39,19 @@ RGBColor BadgeNotification::led2() const { return _led2; }
 boolean BadgeNotification::sound() const { return _sound; }
 uint8_t BadgeNotification::type() const { return _type; }
 
-BadgeNotifications::BadgeNotifications(SettingsStore& aSettingsStore, MessageCheckTask& aMessageCheckTask, AppManager& aAppManager)
+BadgeNotifications::BadgeNotifications(SettingsStore& aSettingsStore, AppManager& aAppManager)
     :mSettingsStore(aSettingsStore),
-    mMessageCheckTask(aMessageCheckTask),
     mAppManager(aAppManager),
     mBadgeNotification(NULL)
 
 {
-    if (mSettingsStore.hasBadgeId()) {
-        uint16_t badgeId = mSettingsStore.getBadgeId();
-        mMessageCheckTask.subscribe(this, badgeId, badgeId);
-    }
-
     mSettingsStore.addObserver(this);
 
     mNotificationMutex = xSemaphoreCreateMutex();
-    mMessageCheckTask.subscribe(this, 0xb003, 0xb003);
-
-    badgeIdSubscriptionSet = false;
 }
 
 BadgeNotifications::~BadgeNotifications() {
     mSettingsStore.removeObserver(this);
-    mMessageCheckTask.unsubscribe(this);
     delete mBadgeNotification;
 }
 
@@ -74,6 +62,7 @@ RGBColor BadgeNotifications::getRGBColor(PackReader& aReader) {
     return RGBColor(red, blue, green);
 }
 
+/*
 void BadgeNotifications::handleMessage(const IncomingRadioMessage& aIncomingRadioMessage) {
     // parse the radio message content into mBadgeNotification
     // <3 bytes rgb1> <3 bytes rgb2> <1 byte sound> <text>
@@ -91,6 +80,9 @@ void BadgeNotifications::handleMessage(const IncomingRadioMessage& aIncomingRadi
         debug::log(text);
         pushNotification(text, rgb1, rgb2, sound, type);
 }
+*/
+// TODO: Way of doing badge notifications without specificity to
+// radio or radio-messaging code functionality
 
 void BadgeNotifications::pushNotification(String text, RGBColor rgb1, RGBColor rgb2, boolean sound, uint8_t type) {
     if (xSemaphoreTake(mNotificationMutex, portMAX_DELAY) == pdTRUE) {
@@ -98,13 +90,6 @@ void BadgeNotifications::pushNotification(String text, RGBColor rgb1, RGBColor r
         mBadgeNotification = new BadgeNotification(text, rgb1, rgb2, sound, type);
         xSemaphoreGive(mNotificationMutex);
         Tilda::openApp(NotificationApp::New);
-    }
-}
-
-void BadgeNotifications::badgeIdChanged(uint16_t badgeId) {
-    if (!badgeIdSubscriptionSet) {
-        badgeIdSubscriptionSet = true;
-        mMessageCheckTask.subscribe(this, badgeId, badgeId);
     }
 }
 
